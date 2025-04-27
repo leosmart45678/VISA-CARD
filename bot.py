@@ -1,4 +1,3 @@
-import os
 from telegram import (
     Update, InlineKeyboardButton, InlineKeyboardMarkup,
     ReplyKeyboardMarkup, KeyboardButton
@@ -177,10 +176,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Entry point
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))  # Get port from Render's environment variable
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler('start', start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    
-    # Ensure the app runs on the right port for Render
-    app.run_polling(port=port)
+    app.run_polling()
