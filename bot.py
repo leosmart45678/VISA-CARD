@@ -86,7 +86,6 @@ This dedicated card activation portal was kept confidential by GBP for years. Af
 """
 
 # Typing action decorator
-
 def send_typing_action(func):
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
@@ -107,7 +106,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @send_typing_action
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
-        [KeyboardButton("Cards"), KeyboardButton("Price Listing")],
+        [KeyboardButton("Cards 💳")],  # Updated button with 💳 emoji
         [KeyboardButton("About"), KeyboardButton("Purchase")],
         [KeyboardButton("Help")]
     ]
@@ -131,21 +130,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # Main menu actions
-    if text == "Cards":
+    if text == "Cards 💳":  # Adjusted to listen for "Cards 💳"
         keyboard = [
             [
-                InlineKeyboardButton(name, callback_data=name),
-                InlineKeyboardButton(f"Price: {data['price']}", callback_data=f"price_{name}"),
-                InlineKeyboardButton("View in Store", url=data['link'])
+                InlineKeyboardButton(f"{name} 💳", callback_data=name),
             ] 
-            for name, data in CARDS.items()
+            for name in CARDS.keys()
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.message.reply_text("Select a card to view details:", reply_markup=reply_markup)
-
-    elif text == "Price Listing":
-        info = "\n".join([f"{name}: {data['price']}" for name, data in CARDS.items()])
-        await update.message.reply_text(f"Card Prices:\n\n{info}")
 
     elif text == "About":
         await update.message.reply_text(ABOUT_TEXT)
@@ -178,7 +171,18 @@ async def card_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data:
         caption = f"{card_name}: {data['price']} - {data['desc']}\n\n"
         caption += f"View in Store: {data['link']}"
-        await query.message.reply_photo(photo=data['image'], caption=caption)
+        
+        # Display all cards with images and their details
+        keyboard = [
+            [
+                InlineKeyboardButton(f"{name} 💳", callback_data=name),
+                InlineKeyboardButton(f"Price: {data['price']}", callback_data=f"price_{name}"),
+                InlineKeyboardButton("View in Store", url=data['link'])
+            ] 
+            for name, data in CARDS.items()
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.message.reply_photo(photo=data['image'], caption=caption, reply_markup=reply_markup)
 
 # Entry point
 if __name__ == '__main__':
