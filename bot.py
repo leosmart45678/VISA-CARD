@@ -106,7 +106,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @send_typing_action
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
-        [KeyboardButton("Cards 💳")],  # Updated button with 💳 emoji
+        [KeyboardButton("Cards 💳")],
         [KeyboardButton("About"), KeyboardButton("Purchase")],
         [KeyboardButton("Help")]
     ]
@@ -130,28 +130,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # Main menu actions
-    if text == "Cards 💳":  # Adjusted to listen for "Cards 💳"
-        # Create the list of all cards with images and "View in Store" button
-        all_cards_message = "Here are the available cards:\n\n"
-        
+    if text == "Cards 💳":
+        # Creating a list of all the cards
+        keyboard = []
         for name, data in CARDS.items():
-            caption = f"{name}: {data['price']} - {data['desc']}\n\n"
-            
-            # Add each card's details to the message
-            all_cards_message += f"{caption}View in Store: {data['link']}\n\n"
-            
-            # Send the card image and the "View in Store" button below each image
-            view_in_store_button = InlineKeyboardButton("View in Store", url=data['link'])
-            keyboard = InlineKeyboardMarkup([[view_in_store_button]])
-            
-            # Send the image with a "View in Store" button
-            await update.message.reply_photo(
-                photo=data['image'],
-                caption=caption,
-                reply_markup=keyboard
-            )
-        
-        return
+            button = InlineKeyboardButton(name, callback_data=name)
+            view_button = InlineKeyboardButton("View in Store", url=data['link'])
+            keyboard.append([button, view_button])
+
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.message.reply_text("Select a card to view details:", reply_markup=reply_markup)
 
     elif text == "About":
         await update.message.reply_text(ABOUT_TEXT)
@@ -174,9 +162,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Please select an option from the menu.")
 
+# Handle card button clicks
+@send_typing_action
+async def card_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    card_name = query.data
+    data = CARDS.get(card_name)
+    if data:
+        caption = f"{card_name}: {data['price']} - {data['desc']}\n\n"
+        caption += f"View in Store: {data['link']}"
+        await query.message.reply_photo(photo=data['image'], caption=caption)
+
 # Entry point
 if __name__ == '__main__':
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler('start', start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(CallbackQueryHandler(card_selection))
     app.run_polling()
